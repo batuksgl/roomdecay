@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RoomDecay — Know Your Room</title>
+<meta name="description" content="Analyze your room acoustics, measure RT60, and get professional treatment recommendations.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Outfit:wght@200;300;400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#06080e;color:#c8d8e8;font-family:'Outfit',sans-serif;overflow:hidden;height:100vh;cursor:crosshair}
+canvas#viz{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0}
+.overlay{position:fixed;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none;
+  background:radial-gradient(ellipse at 50% 45%,transparent 20%,rgba(6,8,14,.3) 50%,rgba(6,8,14,.88) 100%)}
+
+/* Touch prompt */
+.touch-prompt{position:fixed;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px;pointer-events:none;transition:opacity 1s ease}
+.touch-prompt.hidden{opacity:0;pointer-events:none}
+.touch-ring{width:100px;height:100px;border-radius:50%;border:1.5px solid rgba(0,200,255,.2);display:flex;align-items:center;justify-content:center;animation:touchPulse 2.5s ease-in-out infinite}
+.touch-ring-inner{width:10px;height:10px;border-radius:50%;background:rgba(0,200,255,.5);box-shadow:0 0 20px rgba(0,200,255,.4)}
+.touch-text{font-family:'Space Mono',monospace;font-size:clamp(13px,2.2vw,18px);letter-spacing:6px;color:#6aaccc;text-transform:uppercase;animation:touchFade 2.5s ease-in-out infinite}
+@keyframes touchPulse{0%,100%{transform:scale(1);border-color:rgba(0,200,255,.15)}50%{transform:scale(1.2);border-color:rgba(0,200,255,.35)}}
+@keyframes touchFade{0%,100%{opacity:.4}50%{opacity:1}}
+
+/* Content — hidden until first touch */
+.content{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;padding:40px 24px;pointer-events:none;text-align:center}
+.content>*{opacity:0;transform:translateY(20px);transition:opacity .8s ease,transform .8s ease}
+.content.revealed>.logo{opacity:1;transform:translateY(0);transition-delay:2s}
+.content.revealed>.title{opacity:1;transform:translateY(0);transition-delay:2.3s}
+.content.revealed>.subtitle{opacity:1;transform:translateY(0);transition-delay:2.6s}
+.content.revealed>.tagline{opacity:1;transform:translateY(0);transition-delay:2.9s}
+.content.revealed>.features{opacity:1;transform:translateY(0);transition-delay:3.2s}
+.content.revealed>.cta-area{opacity:1;transform:translateY(0);transition-delay:3.5s}
+
+.logo{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:8px;color:#5a8aaa;text-transform:uppercase;margin-bottom:14px}
+.title{font-size:clamp(44px,9vw,88px);font-weight:200;letter-spacing:-2px;color:#eaf2fa;line-height:1}
+.title span{background:linear-gradient(135deg,#00ccff,#0066ff 40%,#00ffaa 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:600}
+.subtitle{font-size:clamp(13px,2vw,18px);font-weight:300;color:#7aaac8;margin-top:14px;letter-spacing:1.5px}
+.tagline{max-width:520px;text-align:center;margin:36px 0}
+.tagline p{font-size:clamp(14px,1.8vw,17px);font-weight:300;color:#8ab0cc;line-height:1.7}
+.tagline strong{color:#a0d8f0;font-weight:400}
+.features{display:flex;gap:28px;margin-bottom:44px;flex-wrap:wrap;justify-content:center}
+.feat{display:flex;align-items:center;gap:8px;font-size:13px;color:#6a9aba;letter-spacing:.5px}
+.feat-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.feat-dot.c1{background:#00ccff;box-shadow:0 0 6px rgba(0,204,255,.6)}
+.feat-dot.c2{background:#00ff88;box-shadow:0 0 6px rgba(0,255,136,.6)}
+.feat-dot.c3{background:#4488ff;box-shadow:0 0 6px rgba(68,136,255,.6)}
+.cta-area{text-align:center;pointer-events:auto}
+.cta-label{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:4px;color:#5a88a8;text-transform:uppercase;margin-bottom:14px}
+.email-form{display:flex;gap:0;max-width:400px;margin:0 auto 16px}
+.email-input{flex:1;background:rgba(255,255,255,.03);border:1px solid #152030;border-right:none;border-radius:6px 0 0 6px;padding:12px 16px;font-size:14px;color:#b0d0e8;font-family:'Outfit',sans-serif;outline:none;transition:all .2s}
+.email-input::placeholder{color:#3a6080}
+.email-input:focus{border-color:#00ccff33;background:rgba(0,80,160,.06)}
+.email-btn{background:linear-gradient(135deg,#005ab5,#0078ee);border:1px solid #0068dd;border-radius:0 6px 6px 0;padding:12px 24px;font-size:13px;font-weight:600;color:#e0f0ff;cursor:pointer;font-family:'Outfit',sans-serif;letter-spacing:.5px;transition:all .2s}
+.email-btn:hover{background:linear-gradient(135deg,#0068cc,#0088ff);box-shadow:0 0 20px rgba(0,100,255,.25)}
+.cta-note{font-size:11px;color:#3a6888;letter-spacing:.5px}
+.status-msg{font-size:13px;color:#00ee88;margin-top:6px;display:none}
+
+/* Corners — hidden until reveal */
+.corner-tl,.corner-tr,.corner-bl,.corner-br{position:fixed;z-index:3;font-family:'Space Mono',monospace;font-size:clamp(7px,1.2vw,9px);letter-spacing:2px;color:#2a4a68;text-transform:uppercase;opacity:0;transform:translateY(10px);transition:opacity .6s ease,transform .6s ease}
+.corner-tl.show,.corner-tr.show,.corner-bl.show,.corner-br.show{opacity:1;transform:translateY(0)}
+.corner-tl{top:14px;left:16px}
+.corner-tr{top:14px;right:16px;text-align:right}
+.corner-bl{bottom:14px;left:16px}
+.corner-br{bottom:14px;right:16px;text-align:right}
+
+@media(max-width:600px){
+.features{flex-direction:column;align-items:center;gap:12px}
+.email-form{flex-direction:column;gap:6px}
+.email-input{border-radius:6px;border-right:1px solid #152030}
+.email-btn{border-radius:6px}
+.corner-bl,.corner-br{bottom:8px}
+.touch-ring{width:60px;height:60px}
+}
+</style>
+</head>
+<body>
+<canvas id="viz"></canvas>
+<div class="overlay"></div>
+
+<!-- Touch prompt -->
+<div class="touch-prompt" id="touchPrompt">
+  <div class="touch-ring"><div class="touch-ring-inner"></div></div>
+  <div class="touch-text">Touch anywhere</div>
+</div>
+
+<!-- Corners -->
+<div class="corner-tl" id="ctl">◈ RoomDecay</div>
+<div class="corner-tr" id="ctr">2025</div>
+<div class="corner-bl" id="cbl">© roomdecay.com</div>
+<div class="corner-br" id="cbr">Measure · Analyze · Treat</div>
+
+<!-- Main content -->
+<div class="content" id="mainContent">
+  <div class="logo">◈ Room Decay</div>
+  <div class="title">Know Your <span>Room</span></div>
+  <div class="subtitle">Acoustic analysis for the modern studio</div>
+  <div class="tagline">
+    <p>Your room shapes every sound you hear. <strong>RoomDecay</strong> analyzes your space, measures its acoustic signature, and shows you exactly how to treat it.</p>
+  </div>
+  <div class="features">
+    <div class="feat"><div class="feat-dot c1"></div>Room Mode Analysis</div>
+    <div class="feat"><div class="feat-dot c2"></div>RT60 Measurement</div>
+    <div class="feat"><div class="feat-dot c3"></div>Treatment Plans</div>
+  </div>
+  <div class="cta-area">
+    <div class="cta-label">Launching Soon</div>
+    <form class="email-form" onsubmit="submitEmail(event)">
+      <input class="email-input" type="email" placeholder="your@email.com" required id="emailInput">
+      <button class="email-btn" type="submit">Notify Me</button>
+    </form>
+    <div class="cta-note">Be first to know. No spam, ever.</div>
+    <div class="status-msg" id="statusMsg">✓ You're on the list!</div>
+  </div>
+</div>
+
+<script>
+const C=document.getElementById('viz'),cx=C.getContext('2d');
+let W,H;
+const WALL=6;
+const MAX_WAVES=80;
+const CLICK_CD=350;
+let lastClick=0,lastEmit=0;
+let firstTouch=false;
+
+function resize(){W=C.width=window.innerWidth;H=C.height=window.innerHeight}
+resize();window.addEventListener('resize',resize);
+
+const room=()=>({l:WALL,r:W-WALL,t:WALL,b:H-WALL});
+
+// ── Sound Wave ──
+class Wave{
+  constructor(ox,oy,energy,gen,delay){
+    this.ox=ox;this.oy=oy;this.r=0;
+    this.energy=energy||1;this.gen=gen||0;this.delay=delay||0;
+    this.speed=2.2;this.reflected={t:false,b:false,l:false,r:false};
+    this.baseGen=gen||0;
+  }
+  getHue(){return 195-this.baseGen*8}
+  getSat(){return 70-this.baseGen*3}
+  getLit(){return 60-this.baseGen*4}
+  update(){
+    if(this.delay>0){this.delay--;return}
+    this.r+=this.speed;
+    this.energy*=.9993;
+    const rm=room();
+    if(!this.reflected.t&&this.oy-this.r<=rm.t){
+      this.reflected.t=true;this.spawnReflection(this.ox,rm.t+(rm.t-this.oy));
+      impacts.push(new Impact(Math.max(rm.l,Math.min(rm.r,this.ox)),rm.t,this.energy));
+    }
+    if(!this.reflected.b&&this.oy+this.r>=rm.b){
+      this.reflected.b=true;this.spawnReflection(this.ox,rm.b+(rm.b-this.oy));
+      impacts.push(new Impact(Math.max(rm.l,Math.min(rm.r,this.ox)),rm.b,this.energy));
+    }
+    if(!this.reflected.l&&this.ox-this.r<=rm.l){
+      this.reflected.l=true;this.spawnReflection(rm.l+(rm.l-this.ox),this.oy);
+      impacts.push(new Impact(rm.l,Math.max(rm.t,Math.min(rm.b,this.oy)),this.energy));
+    }
+    if(!this.reflected.r&&this.ox+this.r>=rm.r){
+      this.reflected.r=true;this.spawnReflection(rm.r+(rm.r-this.ox),this.oy);
+      impacts.push(new Impact(rm.r,Math.max(rm.t,Math.min(rm.b,this.oy)),this.energy));
+    }
+  }
+  spawnReflection(mx,my){
+    if(this.gen>=8||waves.length>=MAX_WAVES)return;
+    const refE=this.energy*.65;if(refE<.02)return;
+    waves.push(new Wave(mx,my,refE,this.gen+1,0));
+  }
+  draw(){
+    if(this.delay>0||this.energy<.01)return;
+    const rm=room(),e=this.energy,h=this.getHue(),s=this.getSat(),l=this.getLit();
+    cx.save();cx.beginPath();cx.rect(rm.l,rm.t,rm.r-rm.l,rm.b-rm.t);cx.clip();
+    cx.beginPath();cx.arc(this.ox,this.oy,this.r,0,Math.PI*2);
+    cx.strokeStyle=`hsla(${h},${s}%,${l}%,${e*.12})`;cx.lineWidth=12*e+2;cx.stroke();
+    cx.beginPath();cx.arc(this.ox,this.oy,this.r,0,Math.PI*2);
+    cx.strokeStyle=`hsla(${h},${s+10}%,${l+10}%,${e*.4})`;cx.lineWidth=4*e+1;cx.stroke();
+    cx.beginPath();cx.arc(this.ox,this.oy,this.r,0,Math.PI*2);
+    cx.strokeStyle=`hsla(${h},${s+20}%,${l+20}%,${e*.6})`;cx.lineWidth=1.5*e+.5;cx.stroke();
+    cx.restore();
+  }
+  get alive(){return this.energy>.008&&this.r<Math.max(W,H)*2}
+}
+
+// ── Impact ──
+class Impact{
+  constructor(x,y,energy){this.x=x;this.y=y;this.e=energy;this.life=1}
+  update(){this.life*=.88}
+  draw(){
+    if(this.life<.02)return;const a=this.life*this.e;
+    cx.beginPath();cx.arc(this.x,this.y,3*this.life,0,Math.PI*2);
+    cx.fillStyle=`rgba(100,220,255,${a*.7})`;cx.fill();
+    cx.beginPath();cx.arc(this.x,this.y,18*this.life*this.e,0,Math.PI*2);
+    cx.fillStyle=`rgba(0,150,255,${a*.15})`;cx.fill();
+    const rm=room();cx.globalAlpha=a*.2;
+    if(Math.abs(this.y-rm.t)<2){cx.fillStyle='rgba(0,180,255,1)';cx.fillRect(rm.l,rm.t-1,rm.r-rm.l,2)}
+    else if(Math.abs(this.y-rm.b)<2){cx.fillStyle='rgba(0,180,255,1)';cx.fillRect(rm.l,rm.b-1,rm.r-rm.l,2)}
+    else if(Math.abs(this.x-rm.l)<2){cx.fillStyle='rgba(0,180,255,1)';cx.fillRect(rm.l-1,rm.t,2,rm.b-rm.t)}
+    else if(Math.abs(this.x-rm.r)<2){cx.fillStyle='rgba(0,180,255,1)';cx.fillRect(rm.r-1,rm.t,2,rm.b-rm.t)}
+    cx.globalAlpha=1;
+  }
+  get alive(){return this.life>.02}
+}
+
+// ── Burst ──
+class Burst{
+  constructor(x,y){this.x=x;this.y=y;this.life=1}
+  update(){this.life*=.94}
+  draw(){
+    if(this.life<.02)return;
+    cx.beginPath();cx.arc(this.x,this.y,6*this.life,0,Math.PI*2);
+    cx.fillStyle=`rgba(0,230,255,${this.life*.6})`;cx.fill();
+    cx.beginPath();cx.arc(this.x,this.y,30*this.life,0,Math.PI*2);
+    cx.fillStyle=`rgba(0,160,255,${this.life*.08})`;cx.fill();
+    const s=15*this.life;
+    cx.strokeStyle=`rgba(0,200,255,${this.life*.2})`;cx.lineWidth=1;
+    cx.beginPath();cx.moveTo(this.x-s,this.y);cx.lineTo(this.x+s,this.y);cx.stroke();
+    cx.beginPath();cx.moveTo(this.x,this.y-s);cx.lineTo(this.x,this.y+s);cx.stroke();
+  }
+  get alive(){return this.life>.02}
+}
+
+let waves=[],impacts=[],bursts=[];
+
+function emitSound(x,y){
+  const rm=room();
+  x=Math.max(rm.l+10,Math.min(rm.r-10,x));
+  y=Math.max(rm.t+10,Math.min(rm.b-10,y));
+  while(waves.length>MAX_WAVES-15)waves.shift();
+  for(let i=0;i<10;i++)waves.push(new Wave(x,y,1-i*.06,0,i*5));
+  bursts.push(new Burst(x,y));
+  lastEmit=performance.now();
+}
+
+function drawRoom(){
+  const rm=room(),active=waves.filter(w=>w.energy>.1).length;
+  const g=Math.min(.2,.03+active*.004);
+  cx.strokeStyle=`rgba(15,50,85,${g})`;cx.lineWidth=1.5;
+  cx.strokeRect(rm.l,rm.t,rm.r-rm.l,rm.b-rm.t);
+  const L=20;
+  [[rm.l,rm.t,1,1],[rm.r,rm.t,-1,1],[rm.l,rm.b,1,-1],[rm.r,rm.b,-1,-1]].forEach(([x,y,sx,sy])=>{
+    cx.strokeStyle=`rgba(0,140,210,${g*1.5})`;cx.lineWidth=1.5;
+    cx.beginPath();cx.moveTo(x+sx*L,y);cx.lineTo(x,y);cx.lineTo(x,y+sy*L);cx.stroke();
+  });
+}
+
+const dust=[];
+for(let i=0;i<25;i++)dust.push({
+  x:WALL+Math.random()*(innerWidth-WALL*2),y:WALL+Math.random()*(innerHeight-WALL*2),
+  vx:(Math.random()-.5)*.08,vy:(Math.random()-.5)*.06,sz:.4+Math.random()*.5,al:.03+Math.random()*.05
+});
+function drawDust(){
+  const rm=room();
+  dust.forEach(d=>{
+    d.x+=d.vx;d.y+=d.vy;
+    if(d.x<rm.l||d.x>rm.r)d.vx*=-1;
+    if(d.y<rm.t||d.y>rm.b)d.vy*=-1;
+    for(const w of waves){
+      if(w.energy<.05||w.delay>0)continue;
+      const dx=d.x-w.ox,dy=d.y-w.oy,dist=Math.sqrt(dx*dx+dy*dy);
+      const diff=Math.abs(dist-w.r);
+      if(diff<20){const push=w.energy*.02*(1-diff/20);if(dist>1){d.vx+=dx/dist*push;d.vy+=dy/dist*push}}
+    }
+    d.vx*=.97;d.vy*=.97;
+    cx.beginPath();cx.arc(d.x,d.y,d.sz,0,Math.PI*2);
+    cx.fillStyle=`rgba(80,140,200,${d.al})`;cx.fill();
+  });
+}
+
+// ── Reveal content after first touch ──
+function revealContent(){
+  document.getElementById('touchPrompt').classList.add('hidden');
+  document.getElementById('mainContent').classList.add('revealed');
+  setTimeout(()=>{
+    document.getElementById('ctl').classList.add('show');
+    document.getElementById('ctr').classList.add('show');
+  },3200);
+  setTimeout(()=>{
+    document.getElementById('cbl').classList.add('show');
+    document.getElementById('cbr').classList.add('show');
+  },3500);
+}
+
+// Auto-reveal after 7 seconds if no touch
+let autoRevealTimer=setTimeout(()=>{
+  if(!firstTouch){
+    firstTouch=true;
+    // Emit wave from center before revealing
+    emitSound(W*.5,H*.45);
+    revealContent();
+  }
+},7000);
+
+// ── Main loop ──
+function animate(){
+  cx.fillStyle='rgba(6,8,14,.025)';cx.fillRect(0,0,W,H);
+  drawRoom();drawDust();
+  waves.forEach(w=>{w.update();w.draw()});
+  waves=waves.filter(w=>w.alive);
+  impacts.forEach(i=>{i.update();i.draw()});
+  impacts=impacts.filter(i=>i.alive);
+  bursts.forEach(b=>{b.update();b.draw()});
+  bursts=bursts.filter(b=>b.alive);
+  requestAnimationFrame(animate);
+}
+animate();
+
+// ── Input ──
+function handleEmit(x,y){
+  const now=performance.now();
+  if(now-lastClick<CLICK_CD)return;
+  lastClick=now;
+  if(!firstTouch){
+    firstTouch=true;
+    clearTimeout(autoRevealTimer);
+    revealContent();
+  }
+  emitSound(x,y);
+}
+window.addEventListener('click',e=>{
+  if(e.target.closest('.cta-area'))return;
+  handleEmit(e.clientX,e.clientY);
+});
+window.addEventListener('touchstart',e=>{
+  if(e.target.closest('.cta-area'))return;
+  handleEmit(e.touches[0].clientX,e.touches[0].clientY);
+},{passive:true});
+
+// Auto ambient (only after first touch)
+setInterval(()=>{
+  if(firstTouch&&waves.filter(w=>w.alive).length<2){
+    const rm=room();
+    emitSound(rm.l+80+Math.random()*(rm.r-rm.l-160),rm.t+80+Math.random()*(rm.b-rm.t-160));
+  }
+},7000);
+
+// Gentle initial wave from random edge (before first touch)
+setTimeout(()=>{
+  const rm=room();const edge=Math.floor(Math.random()*4);let x,y;
+  if(edge===0){x=rm.l+10;y=rm.t+Math.random()*(rm.b-rm.t)}
+  else if(edge===1){x=rm.r-10;y=rm.t+Math.random()*(rm.b-rm.t)}
+  else if(edge===2){x=rm.l+Math.random()*(rm.r-rm.l);y=rm.t+10}
+  else{x=rm.l+Math.random()*(rm.r-rm.l);y=rm.b-10}
+  // Soft intro wave — fewer rings
+  while(waves.length>MAX_WAVES-8)waves.shift();
+  for(let i=0;i<4;i++)waves.push(new Wave(x,y,.6-i*.1,0,i*6));
+},800);
+
+// ── Email ──
+function submitEmail(e){
+  e.preventDefault();
+  document.getElementById('statusMsg').style.display='block';
+  document.getElementById('emailInput').value='';
+  setTimeout(()=>{document.getElementById('statusMsg').style.display='none'},3000);
+}
+</script>
+</body>
+</html>
