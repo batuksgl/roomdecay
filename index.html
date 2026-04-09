@@ -120,9 +120,7 @@ canvas#viz{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0}
 <div class="source-dot" id="srcDot"></div>
 
 <div class="corner-tl" id="ctl">◈ RoomDecay</div>
-<div class="corner-tr" id="ctr">2025</div>
-<div class="corner-bl" id="cbl">© roomdecay.com</div>
-<div class="corner-br" id="cbr">Measure · Analyze · Treat</div>
+<div class="corner-tr" id="ctr">2026</div>
 
 <div class="echo-insight" id="echoInsight">
   <div class="echo-msg bad">Can't read the text?</div>
@@ -291,7 +289,7 @@ const srcDot=document.getElementById('srcDot');
 const content=document.getElementById('mainContent');
 
 function showCorners(){
-  ['ctl','ctr','cbl','cbr'].forEach((id,i)=>{
+  ['ctl','ctr'].forEach((id,i)=>{
     setTimeout(()=>document.getElementById(id).classList.add('show'),i*150);
   });
 }
