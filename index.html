@@ -17,22 +17,27 @@ canvas#viz{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0}
 
 /* Touch prompt */
 .touch-prompt{position:fixed;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px;pointer-events:none;transition:opacity 1s ease}
-.touch-prompt.hidden{opacity:0;pointer-events:none}
+.touch-prompt.hidden{opacity:0}
 .touch-ring{width:100px;height:100px;border-radius:50%;border:1.5px solid rgba(0,200,255,.2);display:flex;align-items:center;justify-content:center;animation:touchPulse 2.5s ease-in-out infinite}
 .touch-ring-inner{width:10px;height:10px;border-radius:50%;background:rgba(0,200,255,.5);box-shadow:0 0 20px rgba(0,200,255,.4)}
 .touch-text{font-family:'Space Mono',monospace;font-size:clamp(13px,2.2vw,18px);letter-spacing:6px;color:#6aaccc;text-transform:uppercase;animation:touchFade 2.5s ease-in-out infinite}
 @keyframes touchPulse{0%,100%{transform:scale(1);border-color:rgba(0,200,255,.15)}50%{transform:scale(1.2);border-color:rgba(0,200,255,.35)}}
 @keyframes touchFade{0%,100%{opacity:.4}50%{opacity:1}}
 
-/* Content — hidden until first touch */
+/* Source indicator — pulsing dot at fixed source */
+.source-dot{position:fixed;z-index:4;width:12px;height:12px;border-radius:50%;background:rgba(0,200,255,.6);box-shadow:0 0 15px rgba(0,200,255,.4);transform:translate(-50%,-50%);display:none;pointer-events:none;animation:srcPulse 1s ease-in-out infinite}
+.source-dot.active{display:block}
+@keyframes srcPulse{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:.6}50%{transform:translate(-50%,-50%) scale(1.4);opacity:1}}
+
+/* Content */
 .content{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;padding:40px 24px;pointer-events:none;text-align:center}
 .content>*{opacity:0;transform:translateY(20px);transition:opacity .8s ease,transform .8s ease}
-.content.revealed>.logo{opacity:1;transform:translateY(0);transition-delay:2s}
-.content.revealed>.title{opacity:1;transform:translateY(0);transition-delay:2.3s}
-.content.revealed>.subtitle{opacity:1;transform:translateY(0);transition-delay:2.6s}
-.content.revealed>.tagline{opacity:1;transform:translateY(0);transition-delay:2.9s}
-.content.revealed>.features{opacity:1;transform:translateY(0);transition-delay:3.2s}
-.content.revealed>.cta-area{opacity:1;transform:translateY(0);transition-delay:3.5s}
+.content.revealed>.logo{opacity:1;transform:translateY(0);transition-delay:0s}
+.content.revealed>.title{opacity:1;transform:translateY(0);transition-delay:.2s}
+.content.revealed>.subtitle{opacity:1;transform:translateY(0);transition-delay:.4s}
+.content.revealed>.tagline{opacity:1;transform:translateY(0);transition-delay:.6s}
+.content.revealed>.features{opacity:1;transform:translateY(0);transition-delay:.8s}
+.content.revealed>.cta-area{opacity:1;transform:translateY(0);transition-delay:1s}
 
 .logo{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:8px;color:#5a8aaa;text-transform:uppercase;margin-bottom:14px}
 .title{font-size:clamp(44px,9vw,88px);font-weight:200;letter-spacing:-2px;color:#eaf2fa;line-height:1}
@@ -58,7 +63,26 @@ canvas#viz{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0}
 .cta-note{font-size:11px;color:#3a6888;letter-spacing:.5px}
 .status-msg{font-size:13px;color:#00ee88;margin-top:6px;display:none}
 
-/* Corners — hidden until reveal */
+/* Echo insight — bottom bar */
+.echo-insight{position:fixed;bottom:0;left:0;right:0;z-index:6;text-align:center;pointer-events:none;padding:40px 20px;opacity:0;transition:opacity 1s ease;
+  background:linear-gradient(0deg,rgba(6,8,14,.95) 0%,rgba(6,8,14,.6) 60%,transparent 100%)}
+.echo-insight.visible{opacity:1}
+.echo-msg{font-family:'Space Mono',monospace;font-size:clamp(12px,2vw,17px);letter-spacing:3px;text-transform:uppercase;line-height:1.6}
+.echo-msg.bad{color:#dd7755}
+.echo-sub{font-family:'Outfit',sans-serif;font-size:clamp(13px,1.8vw,18px);color:#6a9ab8;margin-top:10px;font-weight:300;letter-spacing:.5px}
+/* Fix button */
+.fix-btn{display:inline-block;margin-top:16px;padding:10px 28px;font-family:'Space Mono',monospace;font-size:clamp(10px,1.4vw,13px);letter-spacing:3px;text-transform:uppercase;color:#00ddaa;background:rgba(0,220,170,.08);border:1px solid rgba(0,220,170,.25);border-radius:6px;cursor:pointer;pointer-events:auto;transition:all .3s;animation:fixGlow 2s ease-in-out infinite}
+.fix-btn:hover{background:rgba(0,220,170,.15);border-color:rgba(0,220,170,.5);box-shadow:0 0 20px rgba(0,220,170,.15)}
+@keyframes fixGlow{0%,100%{box-shadow:0 0 8px rgba(0,220,170,.1)}50%{box-shadow:0 0 18px rgba(0,220,170,.25)}}
+
+/* Result message after fix */
+.result-msg{position:fixed;bottom:0;left:0;right:0;z-index:6;text-align:center;pointer-events:none;padding:35px 20px;opacity:0;transition:opacity 1s ease;
+  background:linear-gradient(0deg,rgba(6,8,14,.9) 0%,rgba(6,8,14,.4) 60%,transparent 100%)}
+.result-msg.visible{opacity:1}
+.result-text{font-family:'Space Mono',monospace;font-size:clamp(11px,1.6vw,15px);letter-spacing:3px;color:#00ddaa;text-transform:uppercase;line-height:1.6;transition:opacity 1s ease}
+.result-sub{font-family:'Outfit',sans-serif;font-size:clamp(12px,1.5vw,16px);color:#7ab0c8;margin-top:8px;font-weight:300}
+
+/* Corners */
 .corner-tl,.corner-tr,.corner-bl,.corner-br{position:fixed;z-index:3;font-family:'Space Mono',monospace;font-size:clamp(7px,1.2vw,9px);letter-spacing:2px;color:#2a4a68;text-transform:uppercase;opacity:0;transform:translateY(10px);transition:opacity .6s ease,transform .6s ease}
 .corner-tl.show,.corner-tr.show,.corner-bl.show,.corner-br.show{opacity:1;transform:translateY(0)}
 .corner-tl{top:14px;left:16px}
@@ -71,7 +95,6 @@ canvas#viz{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0}
 .email-form{flex-direction:column;gap:6px}
 .email-input{border-radius:6px;border-right:1px solid #152030}
 .email-btn{border-radius:6px}
-.corner-bl,.corner-br{bottom:8px}
 .touch-ring{width:60px;height:60px}
 }
 </style>
@@ -80,19 +103,29 @@ canvas#viz{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0}
 <canvas id="viz"></canvas>
 <div class="overlay"></div>
 
-<!-- Touch prompt -->
 <div class="touch-prompt" id="touchPrompt">
   <div class="touch-ring"><div class="touch-ring-inner"></div></div>
   <div class="touch-text">Touch anywhere</div>
 </div>
 
-<!-- Corners -->
+<div class="source-dot" id="srcDot"></div>
+
 <div class="corner-tl" id="ctl">◈ RoomDecay</div>
 <div class="corner-tr" id="ctr">2025</div>
 <div class="corner-bl" id="cbl">© roomdecay.com</div>
 <div class="corner-br" id="cbr">Measure · Analyze · Treat</div>
 
-<!-- Main content -->
+<div class="echo-insight" id="echoInsight">
+  <div class="echo-msg bad">Can't read the text?</div>
+  <div class="echo-sub">Your room does the same to your music.</div>
+  <div class="fix-btn" id="fixBtn" onclick="fixRoom()">Treat Your Room →</div>
+</div>
+
+<div class="result-msg" id="resultMsg">
+  <div class="result-text" id="resultTitle">Now you can read clearly.</div>
+  <div class="result-sub" id="resultSub">RoomDecay analyzes your room and shows you exactly how to fix it.</div>
+</div>
+
 <div class="content" id="mainContent">
   <div class="logo">◈ Room Decay</div>
   <div class="title">Know Your <span>Room</span></div>
@@ -119,23 +152,18 @@ canvas#viz{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0}
 <script>
 const C=document.getElementById('viz'),cx=C.getContext('2d');
 let W,H;
-const WALL=6;
-const MAX_WAVES=80;
-const CLICK_CD=350;
-let lastClick=0,lastEmit=0;
+const WALL=6,MAX_WAVES=80;
 let firstTouch=false;
 
 function resize(){W=C.width=window.innerWidth;H=C.height=window.innerHeight}
 resize();window.addEventListener('resize',resize);
-
 const room=()=>({l:WALL,r:W-WALL,t:WALL,b:H-WALL});
 
-// ── Sound Wave ──
+// ── Wave ──
 class Wave{
   constructor(ox,oy,energy,gen,delay){
-    this.ox=ox;this.oy=oy;this.r=0;
-    this.energy=energy||1;this.gen=gen||0;this.delay=delay||0;
-    this.speed=2.2;this.reflected={t:false,b:false,l:false,r:false};
+    this.ox=ox;this.oy=oy;this.r=0;this.energy=energy||1;this.gen=gen||0;
+    this.delay=delay||0;this.speed=2.2;this.reflected={t:false,b:false,l:false,r:false};
     this.baseGen=gen||0;
   }
   getHue(){return 195-this.baseGen*8}
@@ -143,47 +171,32 @@ class Wave{
   getLit(){return 60-this.baseGen*4}
   update(){
     if(this.delay>0){this.delay--;return}
-    this.r+=this.speed;
-    this.energy*=.9993;
+    this.r+=this.speed;this.energy*=.9993;
     const rm=room();
-    if(!this.reflected.t&&this.oy-this.r<=rm.t){
-      this.reflected.t=true;this.spawnReflection(this.ox,rm.t+(rm.t-this.oy));
-      impacts.push(new Impact(Math.max(rm.l,Math.min(rm.r,this.ox)),rm.t,this.energy));
-    }
-    if(!this.reflected.b&&this.oy+this.r>=rm.b){
-      this.reflected.b=true;this.spawnReflection(this.ox,rm.b+(rm.b-this.oy));
-      impacts.push(new Impact(Math.max(rm.l,Math.min(rm.r,this.ox)),rm.b,this.energy));
-    }
-    if(!this.reflected.l&&this.ox-this.r<=rm.l){
-      this.reflected.l=true;this.spawnReflection(rm.l+(rm.l-this.ox),this.oy);
-      impacts.push(new Impact(rm.l,Math.max(rm.t,Math.min(rm.b,this.oy)),this.energy));
-    }
-    if(!this.reflected.r&&this.ox+this.r>=rm.r){
-      this.reflected.r=true;this.spawnReflection(rm.r+(rm.r-this.ox),this.oy);
-      impacts.push(new Impact(rm.r,Math.max(rm.t,Math.min(rm.b,this.oy)),this.energy));
-    }
+    if(!this.reflected.t&&this.oy-this.r<=rm.t){this.reflected.t=true;this.spawn(this.ox,rm.t+(rm.t-this.oy));impacts.push(new Impact(Math.max(rm.l,Math.min(rm.r,this.ox)),rm.t,this.energy))}
+    if(!this.reflected.b&&this.oy+this.r>=rm.b){this.reflected.b=true;this.spawn(this.ox,rm.b+(rm.b-this.oy));impacts.push(new Impact(Math.max(rm.l,Math.min(rm.r,this.ox)),rm.b,this.energy))}
+    if(!this.reflected.l&&this.ox-this.r<=rm.l){this.reflected.l=true;this.spawn(rm.l+(rm.l-this.ox),this.oy);impacts.push(new Impact(rm.l,Math.max(rm.t,Math.min(rm.b,this.oy)),this.energy))}
+    if(!this.reflected.r&&this.ox+this.r>=rm.r){this.reflected.r=true;this.spawn(rm.r+(rm.r-this.ox),this.oy);impacts.push(new Impact(rm.r,Math.max(rm.t,Math.min(rm.b,this.oy)),this.energy))}
   }
-  spawnReflection(mx,my){
+  spawn(mx,my){
     if(this.gen>=8||waves.length>=MAX_WAVES)return;
-    const refE=this.energy*.65;if(refE<.02)return;
-    waves.push(new Wave(mx,my,refE,this.gen+1,0));
+    const e=this.energy*.65;if(e<.02)return;
+    waves.push(new Wave(mx,my,e,this.gen+1,0));
   }
   draw(){
     if(this.delay>0||this.energy<.01)return;
     const rm=room(),e=this.energy,h=this.getHue(),s=this.getSat(),l=this.getLit();
     cx.save();cx.beginPath();cx.rect(rm.l,rm.t,rm.r-rm.l,rm.b-rm.t);cx.clip();
     cx.beginPath();cx.arc(this.ox,this.oy,this.r,0,Math.PI*2);
-    cx.strokeStyle=`hsla(${h},${s}%,${l}%,${e*.12})`;cx.lineWidth=12*e+2;cx.stroke();
+    cx.strokeStyle=`hsla(${h},${s}%,${l}%,${e*.06})`;cx.lineWidth=12*e+2;cx.stroke();
     cx.beginPath();cx.arc(this.ox,this.oy,this.r,0,Math.PI*2);
-    cx.strokeStyle=`hsla(${h},${s+10}%,${l+10}%,${e*.4})`;cx.lineWidth=4*e+1;cx.stroke();
+    cx.strokeStyle=`hsla(${h},${s+10}%,${l+10}%,${e*.2})`;cx.lineWidth=4*e+1;cx.stroke();
     cx.beginPath();cx.arc(this.ox,this.oy,this.r,0,Math.PI*2);
-    cx.strokeStyle=`hsla(${h},${s+20}%,${l+20}%,${e*.6})`;cx.lineWidth=1.5*e+.5;cx.stroke();
+    cx.strokeStyle=`hsla(${h},${s+20}%,${l+20}%,${e*.3})`;cx.lineWidth=1.5*e+.5;cx.stroke();
     cx.restore();
   }
   get alive(){return this.energy>.008&&this.r<Math.max(W,H)*2}
 }
-
-// ── Impact ──
 class Impact{
   constructor(x,y,energy){this.x=x;this.y=y;this.e=energy;this.life=1}
   update(){this.life*=.88}
@@ -193,7 +206,7 @@ class Impact{
     cx.fillStyle=`rgba(100,220,255,${a*.7})`;cx.fill();
     cx.beginPath();cx.arc(this.x,this.y,18*this.life*this.e,0,Math.PI*2);
     cx.fillStyle=`rgba(0,150,255,${a*.15})`;cx.fill();
-    const rm=room();cx.globalAlpha=a*.2;
+    const rm=room();cx.globalAlpha=a*.15;
     if(Math.abs(this.y-rm.t)<2){cx.fillStyle='rgba(0,180,255,1)';cx.fillRect(rm.l,rm.t-1,rm.r-rm.l,2)}
     else if(Math.abs(this.y-rm.b)<2){cx.fillStyle='rgba(0,180,255,1)';cx.fillRect(rm.l,rm.b-1,rm.r-rm.l,2)}
     else if(Math.abs(this.x-rm.l)<2){cx.fillStyle='rgba(0,180,255,1)';cx.fillRect(rm.l-1,rm.t,2,rm.b-rm.t)}
@@ -202,8 +215,6 @@ class Impact{
   }
   get alive(){return this.life>.02}
 }
-
-// ── Burst ──
 class Burst{
   constructor(x,y){this.x=x;this.y=y;this.life=1}
   update(){this.life*=.94}
@@ -211,26 +222,22 @@ class Burst{
     if(this.life<.02)return;
     cx.beginPath();cx.arc(this.x,this.y,6*this.life,0,Math.PI*2);
     cx.fillStyle=`rgba(0,230,255,${this.life*.6})`;cx.fill();
-    cx.beginPath();cx.arc(this.x,this.y,30*this.life,0,Math.PI*2);
+    cx.beginPath();cx.arc(this.x,this.y,25*this.life,0,Math.PI*2);
     cx.fillStyle=`rgba(0,160,255,${this.life*.08})`;cx.fill();
-    const s=15*this.life;
-    cx.strokeStyle=`rgba(0,200,255,${this.life*.2})`;cx.lineWidth=1;
-    cx.beginPath();cx.moveTo(this.x-s,this.y);cx.lineTo(this.x+s,this.y);cx.stroke();
-    cx.beginPath();cx.moveTo(this.x,this.y-s);cx.lineTo(this.x,this.y+s);cx.stroke();
   }
   get alive(){return this.life>.02}
 }
 
 let waves=[],impacts=[],bursts=[];
 
-function emitSound(x,y){
+function emitSound(x,y,count){
   const rm=room();
   x=Math.max(rm.l+10,Math.min(rm.r-10,x));
   y=Math.max(rm.t+10,Math.min(rm.b-10,y));
-  while(waves.length>MAX_WAVES-15)waves.shift();
-  for(let i=0;i<10;i++)waves.push(new Wave(x,y,1-i*.06,0,i*5));
+  const n=count||6;
+  while(waves.length>MAX_WAVES-n-5)waves.shift();
+  for(let i=0;i<n;i++)waves.push(new Wave(x,y,1-i*.08,0,i*4));
   bursts.push(new Burst(x,y));
-  lastEmit=performance.now();
 }
 
 function drawRoom(){
@@ -268,29 +275,87 @@ function drawDust(){
   });
 }
 
-// ── Reveal content after first touch ──
-function revealContent(){
-  document.getElementById('touchPrompt').classList.add('hidden');
-  document.getElementById('mainContent').classList.add('revealed');
-  setTimeout(()=>{
-    document.getElementById('ctl').classList.add('show');
-    document.getElementById('ctr').classList.add('show');
-  },3200);
-  setTimeout(()=>{
-    document.getElementById('cbl').classList.add('show');
-    document.getElementById('cbr').classList.add('show');
-  },3500);
+// ── STATE ──
+let phase='waiting'; // waiting → source → message → fixed → free
+let sourceX=0,sourceY=0;
+let sourceInterval=null;
+const srcDot=document.getElementById('srcDot');
+const content=document.getElementById('mainContent');
+
+function showCorners(){
+  ['ctl','ctr','cbl','cbr'].forEach((id,i)=>{
+    setTimeout(()=>document.getElementById(id).classList.add('show'),i*150);
+  });
 }
 
-// Auto-reveal after 7 seconds if no touch
+// Start continuous source
+function startSource(x,y){
+  sourceX=x;sourceY=y;
+  srcDot.style.left=x+'px';
+  srcDot.style.top=y+'px';
+  srcDot.classList.add('active');
+  
+  // Emit immediately
+  emitSound(x,y,4);
+  
+  // Emit every 1 second from same point
+  sourceInterval=setInterval(()=>{
+    if(phase==='source'||phase==='message'){
+      emitSound(sourceX,sourceY,4);
+    }
+  },500);
+}
+
+function stopSource(){
+  if(sourceInterval){clearInterval(sourceInterval);sourceInterval=null}
+  srcDot.classList.remove('active');
+}
+
+// ── STORY ──
+function startStory(x,y){
+  phase='source';
+  document.getElementById('touchPrompt').classList.add('hidden');
+  content.classList.add('revealed');
+  startSource(x,y);
+  
+  // 4s → show "Can't read?" with fix button
+  setTimeout(()=>{
+    if(phase!=='source')return;
+    phase='message';
+    document.getElementById('echoInsight').classList.add('visible');
+  },4000);
+}
+
+// Fix button clicked
+function fixRoom(){
+  phase='fixed';
+  stopSource();
+  document.getElementById('echoInsight').classList.remove('visible');
+  
+  // Show result message
+  setTimeout(()=>{
+    document.getElementById('resultMsg').classList.add('visible');
+    showCorners();
+  },500);
+  
+  // Fade out title after 6s, subtitle stays
+  setTimeout(()=>{
+    document.getElementById('resultTitle').style.opacity='0';
+  },6500);
+  
+  // Go to free mode after 8s
+  setTimeout(()=>{
+    phase='free';
+  },8000);
+}
+
+// Auto-reveal — 10 seconds
 let autoRevealTimer=setTimeout(()=>{
   if(!firstTouch){
     firstTouch=true;
-    // Emit wave from center before revealing
-    emitSound(W*.5,H*.45);
-    revealContent();
+    startStory(W*.3,H*.4);
   }
-},7000);
+},10000);
 
 // ── Main loop ──
 function animate(){
@@ -307,44 +372,54 @@ function animate(){
 animate();
 
 // ── Input ──
-function handleEmit(x,y){
-  const now=performance.now();
-  if(now-lastClick<CLICK_CD)return;
-  lastClick=now;
+window.addEventListener('click',e=>{
+  if(e.target.closest('.cta-area')||e.target.closest('.fix-btn'))return;
+  
   if(!firstTouch){
     firstTouch=true;
     clearTimeout(autoRevealTimer);
-    revealContent();
+    startStory(e.clientX,e.clientY);
+    return;
   }
-  emitSound(x,y);
-}
-window.addEventListener('click',e=>{
-  if(e.target.closest('.cta-area'))return;
-  handleEmit(e.clientX,e.clientY);
+  // Free mode — single wave from click point
+  if(phase==='free'){
+    emitSound(e.clientX,e.clientY);
+  }
 });
 window.addEventListener('touchstart',e=>{
-  if(e.target.closest('.cta-area'))return;
-  handleEmit(e.touches[0].clientX,e.touches[0].clientY);
+  if(e.target.closest('.cta-area')||e.target.closest('.fix-btn'))return;
+  const t=e.touches[0];
+  
+  if(!firstTouch){
+    firstTouch=true;
+    clearTimeout(autoRevealTimer);
+    startStory(t.clientX,t.clientY);
+    return;
+  }
+  if(phase==='free'){
+    emitSound(t.clientX,t.clientY);
+  }
 },{passive:true});
 
-// Auto ambient (only after first touch)
+// Ambient in free mode
 setInterval(()=>{
-  if(firstTouch&&waves.filter(w=>w.alive).length<2){
+  if(phase==='free'&&waves.filter(w=>w.alive).length<2){
     const rm=room();
-    emitSound(rm.l+80+Math.random()*(rm.r-rm.l-160),rm.t+80+Math.random()*(rm.b-rm.t-160));
+    emitSound(rm.l+80+Math.random()*(rm.r-rm.l-160),rm.t+80+Math.random()*(rm.b-rm.t-160),4);
   }
 },7000);
 
-// Gentle initial wave from random edge (before first touch)
+// Gentle pre-touch wave
 setTimeout(()=>{
-  const rm=room();const edge=Math.floor(Math.random()*4);let x,y;
-  if(edge===0){x=rm.l+10;y=rm.t+Math.random()*(rm.b-rm.t)}
-  else if(edge===1){x=rm.r-10;y=rm.t+Math.random()*(rm.b-rm.t)}
-  else if(edge===2){x=rm.l+Math.random()*(rm.r-rm.l);y=rm.t+10}
-  else{x=rm.l+Math.random()*(rm.r-rm.l);y=rm.b-10}
-  // Soft intro wave — fewer rings
-  while(waves.length>MAX_WAVES-8)waves.shift();
-  for(let i=0;i<4;i++)waves.push(new Wave(x,y,.6-i*.1,0,i*6));
+  if(!firstTouch){
+    const rm=room();const edge=Math.floor(Math.random()*4);let x,y;
+    if(edge===0){x=rm.l+10;y=rm.t+Math.random()*(rm.b-rm.t)}
+    else if(edge===1){x=rm.r-10;y=rm.t+Math.random()*(rm.b-rm.t)}
+    else if(edge===2){x=rm.l+Math.random()*(rm.r-rm.l);y=rm.t+10}
+    else{x=rm.l+Math.random()*(rm.r-rm.l);y=rm.b-10}
+    while(waves.length>MAX_WAVES-8)waves.shift();
+    for(let i=0;i<4;i++)waves.push(new Wave(x,y,.5-i*.1,0,i*6));
+  }
 },800);
 
 // ── Email ──
